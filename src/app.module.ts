@@ -3,11 +3,13 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { WebhookModule } from './modules/webhook';
 import { MongooseModule } from '@nestjs/mongoose';
+import { TeamModule } from './modules/team';
 
 @Module({
   imports: [
     MongooseModule.forRoot('mongodb://127.0.0.1:27017/test-mission-manager'),
     WebhookModule,
+    TeamModule,
   ],
   controllers: [AppController],
   providers: [AppService],
