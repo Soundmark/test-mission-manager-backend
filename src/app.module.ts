@@ -4,12 +4,14 @@ import { AppService } from './app.service';
 import { WebhookModule } from './modules/webhook';
 import { MongooseModule } from '@nestjs/mongoose';
 import { TeamModule } from './modules/team';
+import { NotificationModule } from './modules/notification';
 
 @Module({
   imports: [
     MongooseModule.forRoot('mongodb://127.0.0.1:27017/test-mission-manager'),
     WebhookModule,
     TeamModule,
+    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
