@@ -6,6 +6,7 @@ import { Message } from './dto';
 @Injectable()
 export class NotificationService {
   private members = new Map<string, Map<string, Subject<Message>>>();
+  private heartbeatTimer: NodeJS.Timeout;
 
   createConnection(memberId: string) {
     const connectId = randomUUID();
@@ -14,6 +15,7 @@ export class NotificationService {
       this.members.set(memberId, new Map());
     }
     this.members.get(memberId)!.set(connectId, subject);
+    console.log(this.members);
     return { connectId, stream$: subject.asObservable() };
   }
 
@@ -23,7 +25,7 @@ export class NotificationService {
       const subject = memberMap.get(connectId);
       if (subject) {
         subject.complete();
-        this.members.delete(memberId);
+        memberMap.delete(connectId);
       }
       if (memberMap.size === 0) {
         this.members.delete(memberId);

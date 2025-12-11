@@ -1,7 +1,7 @@
-import { Controller, Req, Sse } from '@nestjs/common';
-import { Observable } from 'rxjs';
+import { Controller, Header, Req, Sse } from '@nestjs/common';
+import { finalize, Observable } from 'rxjs';
 import { NotificationService } from './service';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import { Message } from './dto';
 import { ApiOkResponse } from '@nestjs/swagger';
 
@@ -11,18 +11,20 @@ export class NotificationController {
 
   @Sse('/sse/:memberId')
   @ApiOkResponse({ type: Message })
+  @Header('Access-Control-Allow-Origin', '*')
+  @Header('Access-Control-Allow-Methods', 'GET')
   sse(@Req() req: Request): Observable<Message> {
     const memberId = req.params.memberId;
     const { connectId, stream$ } =
       this.notificationService.createConnection(memberId);
 
-    req.on('close', () => {
-      console.log(
-        `sse disconnected: memberId=${memberId} connectId=${connectId}`,
-      );
-      this.notificationService.removeConnection(memberId, connectId);
-    });
-
-    return stream$;
+    return stream$.pipe(
+      finalize(() => {
+        this.notificationService.removeConnection(memberId, connectId);
+        console.log(
+          `disconnected, memberId=${memberId} connectId=${connectId}`,
+        );
+      }),
+    );
   }
 }

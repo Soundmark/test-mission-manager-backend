@@ -9,9 +9,9 @@ import { NotificationModule } from './modules/notification';
 @Module({
   imports: [
     MongooseModule.forRoot('mongodb://127.0.0.1:27017/test-mission-manager'),
+    NotificationModule,
     WebhookModule,
     TeamModule,
-    NotificationModule,
   ],
   controllers: [AppController],
   providers: [AppService],
