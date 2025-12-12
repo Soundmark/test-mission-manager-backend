@@ -6,6 +6,9 @@ export class Member {
   @Prop()
   name: string;
 
+  @Prop()
+  username: string;
+
   @Prop({ type: Types.ObjectId })
   teamId: Types.ObjectId;
 

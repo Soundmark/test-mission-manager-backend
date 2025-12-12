@@ -1,10 +1,10 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
-import { Team } from './schemas/team';
 import { Model, Types } from 'mongoose';
-import { Member } from './schemas/member';
 import { MemberDto, MemberWithIdDto, TeamDto } from './dto';
 import { ApiResponseArrayDto, ApiSimpleResponseDto } from '../../utils/swagger';
+import { Team } from '../database/schemas/team';
+import { Member } from '../database/schemas/member';
 
 @Controller('team')
 export class TeamController {
