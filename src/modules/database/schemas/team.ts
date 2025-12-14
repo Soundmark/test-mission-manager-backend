@@ -5,6 +5,12 @@ import { HydratedDocument } from 'mongoose';
 export class Team {
   @Prop()
   name: string;
+
+  @Prop()
+  creator: string;
+
+  @Prop()
+  createTime: string;
 }
 
 export type TeamDocument = HydratedDocument<Team>;

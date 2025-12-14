@@ -13,7 +13,7 @@ export class MemberDto {
   name: string;
 
   @ApiProperty()
-  teamId: string;
+  teamIds: string[];
 
   @ApiProperty()
   level: number;

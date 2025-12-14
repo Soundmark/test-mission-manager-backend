@@ -9,8 +9,8 @@ export class Member {
   @Prop()
   username: string;
 
-  @Prop({ type: Types.ObjectId })
-  teamId: Types.ObjectId;
+  @Prop()
+  teamIds: Types.ObjectId[];
 
   @Prop()
   level: number;

@@ -1,10 +1,15 @@
 import { Body, Controller, Get, Post, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
+import dayjs from 'dayjs';
 import { Model, Types } from 'mongoose';
-import { MemberDto, MemberWithIdDto, TeamDto } from './dto';
-import { ApiResponseArrayDto, ApiSimpleResponseDto } from '../../utils/swagger';
+import {
+  ApiResponseArrayDto,
+  ApiResponseDto,
+  ApiSimpleResponseDto,
+} from '../../utils/swagger';
+import { Member, MemberDocument } from '../database/schemas/member';
 import { Team } from '../database/schemas/team';
-import { Member } from '../database/schemas/member';
+import { MemberDto, MemberWithIdDto, TeamDto } from './dto';
 
 @Controller('team')
 export class TeamController {
@@ -13,9 +18,22 @@ export class TeamController {
     @InjectModel(Member.name) private memberModel: Model<Member>,
   ) {}
 
-  @Get('/create')
-  async createTeam(@Query('name') name: string) {
-    await this.teamModel.create({ name });
+  @Post('/create')
+  async createTeam(
+    @Body('name') name: string,
+    @Body('creator') creator: string,
+  ) {
+    const [newTeam] = await this.teamModel.create([
+      {
+        name,
+        creator,
+        createTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+      },
+    ]);
+    await this.memberModel.updateOne(
+      { _id: creator },
+      { $addToSet: { teamIds: newTeam._id } },
+    );
   }
 
   @Get('/delete')
@@ -24,12 +42,22 @@ export class TeamController {
   }
 
   @Post('/addMember')
-  async addMember(@Body() body: MemberDto) {
-    const { teamId, ...rest } = body;
+  async addMember(@Body() body: Omit<MemberDto, 'teamIds'>) {
+    const { ...rest } = body;
     await this.memberModel.create({
-      teamId: new Types.ObjectId(teamId),
       ...rest,
+      teamIds: [],
     });
+  }
+
+  @Post('/updateMember')
+  async updateMember(@Body() body: MemberWithIdDto) {
+    const { teamIds, id, ...rest } = body;
+    const updateObj: Partial<MemberDocument> = { ...rest };
+    if (teamIds) {
+      updateObj.teamIds = teamIds.map((item) => new Types.ObjectId(item));
+    }
+    await this.memberModel.findByIdAndUpdate(id, updateObj);
   }
 
   @Get('/deleteMember')
@@ -40,11 +68,21 @@ export class TeamController {
   @Get('/getTeamList')
   @ApiResponseArrayDto(TeamDto)
   async getTeamList(): Promise<TeamDto[]> {
-    const list = await this.teamModel.find();
+    const list = await this.teamModel.find().lean();
     return list.map((item) => {
-      const { _id, name } = item;
-      return { id: _id.toString(), name };
+      const { _id, name, createTime, creator } = item;
+      return { id: _id.toString(), name, createTime, creator };
     });
+  }
+
+  @Get('/getMember')
+  @ApiResponseDto(MemberWithIdDto)
+  async getMember(@Query('memberId') memberId: string) {
+    const member = await this.memberModel.findById(memberId, { __v: 0 }).lean();
+    if (member) {
+      const { _id, ...rest } = member;
+      return { id: _id, ...rest };
+    }
   }
 
   @Get('/getMemberList')
@@ -52,12 +90,18 @@ export class TeamController {
   async getMemberList(
     @Query('teamId') teamId: string,
   ): Promise<MemberWithIdDto[]> {
-    const list = await this.memberModel
-      .find({ teamId: new Types.ObjectId(teamId) }, { password: 0 })
-      .lean();
+    let query: { teamIds?: Types.ObjectId } = {};
+    if (teamId) {
+      query = { teamIds: new Types.ObjectId(teamId) };
+    }
+    const list = await this.memberModel.find(query, { password: 0 }).lean();
     return list.map((item) => {
-      const { _id, teamId, ...rest } = item;
-      return { id: _id.toString(), teamId: teamId.toString(), ...rest };
+      const { _id, teamIds, ...rest } = item;
+      return {
+        id: _id.toString(),
+        teamIds: teamIds.map((item) => item.toString()),
+        ...rest,
+      };
     });
   }
 
