@@ -1,9 +1,9 @@
 import { Controller, Header, Req, Sse } from '@nestjs/common';
-import { finalize, Observable } from 'rxjs';
-import { NotificationService } from './service';
-import type { Request, Response } from 'express';
-import { Message } from './dto';
 import { ApiOkResponse } from '@nestjs/swagger';
+import type { Request } from 'express';
+import { finalize, Observable } from 'rxjs';
+import { Message } from './dto';
+import { NotificationService } from './service';
 
 @Controller('notification')
 export class NotificationController {

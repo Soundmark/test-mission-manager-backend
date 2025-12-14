@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common';
+import { MongooseModule } from '@nestjs/mongoose';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { WebhookModule } from './modules/webhook';
-import { MongooseModule } from '@nestjs/mongoose';
-import { TeamModule } from './modules/team';
 import { NotificationModule } from './modules/notification';
+import { TeamModule } from './modules/team';
+import { WebhookModule } from './modules/webhook';
 
 @Module({
   imports: [
