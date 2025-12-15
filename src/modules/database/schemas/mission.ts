@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument } from 'mongoose';
+import { HydratedDocument, Types } from 'mongoose';
 
 @Schema({ collection: 'mission' })
 export class Mission {
@@ -10,10 +10,16 @@ export class Mission {
   mrTitle: string;
 
   @Prop()
-  sourceMemberId: string;
+  sourceMemberId: Types.ObjectId;
 
   @Prop()
-  targetMemberId: string;
+  targetMemberId: Types.ObjectId;
+
+  @Prop()
+  assignee: Types.ObjectId;
+
+  @Prop()
+  giturl: string;
 
   @Prop()
   sourceBranch: string;

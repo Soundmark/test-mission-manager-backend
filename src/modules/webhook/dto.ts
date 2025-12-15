@@ -7,10 +7,12 @@ export class MergeRequestDto {
     id: string;
     name: string;
     homepage: string;
-    url: string;
+    web_url: string;
   };
 
   object_attributes: {
+    id: number;
+    title: string;
     source_branch: string;
     target_branch: string;
     action:

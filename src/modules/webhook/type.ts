@@ -3,5 +3,5 @@ export interface ProjectMember {
   username: string;
   name: string;
   state: string;
-  email: string;
+  level: number;
 }
