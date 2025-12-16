@@ -34,10 +34,16 @@ export class Mission {
   updateTime: string;
 
   @Prop()
-  status: string; // prepare, open, close
+  status: string; // prepare, open, close, abnormal
 
   @Prop()
   remark: string;
+
+  @Prop()
+  teamId: string;
+
+  @Prop()
+  closeReason: string;
 }
 
 export type MissionDocument = HydratedDocument<Mission>;
