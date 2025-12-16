@@ -24,9 +24,10 @@ export class WebhookService {
   }
 
   async gitlab(body: MergeRequestDto, teamId: string) {
+    console.log(body, teamId);
     const teamMembers = await this.memberModel
       .find({
-        teamId: new Types.ObjectId(teamId),
+        teamIds: new Types.ObjectId(teamId),
       })
       .lean();
     let projectMembers: typeof teamMembers = [];
@@ -48,7 +49,6 @@ export class WebhookService {
     } catch (e) {
       console.error(e);
     }
-    console.log(projectMembers, teamMembers);
     const sourceMember = teamMembers.find(
       (item) => item.username === body.user.username,
     );
@@ -83,20 +83,22 @@ export class WebhookService {
     }
 
     const createTime = dayjs().format('YYYY-MM-DD HH:mm:ss');
-    await this.missionModel.create([
-      {
-        mrId: body.object_attributes.id,
-        mrTitle: body.object_attributes.title,
-        sourceMemberId: sourceMember._id,
-        targetMemberId: targetMember._id,
-        assignee: sourceMember._id,
-        giturl: body.project.web_url,
-        sourceBranch: body.object_attributes.source_branch,
-        targetBranch: body.object_attributes.target_branch,
-        createTime,
-        updateTime: createTime,
-        status: 'prepare',
-      },
-    ]);
+    if (body.object_attributes.action === 'open') {
+      await this.missionModel.create([
+        {
+          mrId: body.object_attributes.id,
+          mrTitle: body.object_attributes.title,
+          sourceMemberId: sourceMember._id,
+          targetMemberId: targetMember._id,
+          assignee: sourceMember._id,
+          giturl: body.project.web_url,
+          sourceBranch: body.object_attributes.source_branch,
+          targetBranch: body.object_attributes.target_branch,
+          createTime,
+          updateTime: createTime,
+          status: 'prepare',
+        },
+      ]);
+    }
   }
 }
