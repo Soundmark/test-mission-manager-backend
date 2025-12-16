@@ -99,7 +99,7 @@ export class TeamController {
       const { _id, teamIds, ...rest } = item;
       return {
         id: _id.toString(),
-        teamIds: teamIds.map((item) => item.toString()),
+        teamIds: teamIds?.map((item) => item.toString()),
         ...rest,
       };
     });
