@@ -9,7 +9,7 @@ export class Member {
   @Prop()
   username: string;
 
-  @Prop({ type: mongoose.Schema.Types.ObjectId })
+  @Prop({ type: [mongoose.Schema.Types.ObjectId] })
   teamIds: Types.ObjectId[];
 
   @Prop()
