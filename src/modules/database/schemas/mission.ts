@@ -1,5 +1,5 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { HydratedDocument, Types } from 'mongoose';
+import mongoose, { HydratedDocument, Types } from 'mongoose';
 
 @Schema({ collection: 'mission' })
 export class Mission {
@@ -9,10 +9,10 @@ export class Mission {
   @Prop()
   mrTitle: string;
 
-  @Prop()
+  @Prop({ type: mongoose.Schema.Types.ObjectId })
   sourceMemberId: Types.ObjectId;
 
-  @Prop()
+  @Prop({ type: mongoose.Schema.Types.ObjectId })
   targetMemberId: Types.ObjectId;
 
   @Prop()
@@ -39,8 +39,8 @@ export class Mission {
   @Prop()
   remark: string;
 
-  @Prop()
-  teamId: string;
+  @Prop({ type: mongoose.Schema.Types.ObjectId })
+  teamId: Types.ObjectId;
 
   @Prop()
   closeReason: string;
