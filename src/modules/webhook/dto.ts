@@ -1,3 +1,5 @@
+import { ApiProperty } from '@nestjs/swagger';
+
 export class MergeRequestDto {
   event_type: 'merge_request';
 
@@ -32,4 +34,48 @@ export class MergeRequestDto {
     username: string;
     email: string;
   }[];
+}
+
+export class MissionDto {
+  @ApiProperty()
+  mrId: number;
+
+  @ApiProperty()
+  mrTitle: string;
+
+  @ApiProperty()
+  sourceMemberId: string;
+
+  @ApiProperty()
+  targetMemberId: string;
+
+  @ApiProperty()
+  assignee: string;
+
+  @ApiProperty()
+  giturl: string;
+
+  @ApiProperty()
+  sourceBranch: string;
+
+  @ApiProperty()
+  targetBranch: string;
+
+  @ApiProperty()
+  createTime: string;
+
+  @ApiProperty()
+  updateTime: string;
+
+  @ApiProperty({ enum: ['prepare', 'open', 'close', 'abnormal'] })
+  status: string;
+
+  @ApiProperty()
+  remark: string;
+
+  @ApiProperty()
+  teamId: string;
+
+  @ApiProperty()
+  closeReason: string;
 }

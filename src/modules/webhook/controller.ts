@@ -1,9 +1,10 @@
 import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Model, Types } from 'mongoose';
+import { ApiResponseArrayDto } from 'src/utils/swagger';
 import { Mission } from '../database/schemas/mission';
 import { NotificationService } from '../notification/service';
-import { MergeRequestDto } from './dto';
+import { MergeRequestDto, MissionDto } from './dto';
 import { WebhookService } from './service';
 
 @Controller('webhook')
@@ -25,6 +26,7 @@ export class WebhookController {
   }
 
   @Get('getMissionList')
+  @ApiResponseArrayDto(MissionDto)
   async getMissionList(@Query('memberId') memberId: string) {
     const missionList = await this.missionModel
       .find({
@@ -36,5 +38,10 @@ export class WebhookController {
       .lean();
 
     return missionList;
+  }
+
+  @Post('updateMission')
+  async updateMission(@Body() body: MissionDto) {
+    await this.webhookService.updateMission(body);
   }
 }
