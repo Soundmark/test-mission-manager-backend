@@ -5,7 +5,7 @@ import dayjs from 'dayjs';
 import { Model, Types } from 'mongoose';
 import { Member } from '../database/schemas/member';
 import { Mission } from '../database/schemas/mission';
-import { MergeRequestDto } from './dto';
+import { MergeRequestDto, MissionDto } from './dto';
 import { ProjectMember } from './type';
 
 @Injectable()
@@ -24,7 +24,6 @@ export class WebhookService {
   }
 
   async gitlab(body: MergeRequestDto, teamId: string) {
-    console.log(body, teamId);
     const teamMembers = await this.memberModel
       .find({
         teamIds: new Types.ObjectId(teamId),
@@ -76,6 +75,7 @@ export class WebhookService {
         (item) => item.level <= sourceMember.level,
       );
       const random = Math.round(Math.random() * preAssigneeList.length);
+      // todo 查看空闲度
       targetMember = preAssigneeList[random];
     } else {
       // 如果找不到合适的任务分配人，将任务指给发起人自己处理
@@ -90,15 +90,45 @@ export class WebhookService {
           mrTitle: body.object_attributes.title,
           sourceMemberId: sourceMember._id,
           targetMemberId: targetMember._id,
-          assignee: sourceMember._id,
+          mrInvolvers: [body.user.username],
           giturl: body.project.web_url,
           sourceBranch: body.object_attributes.source_branch,
           targetBranch: body.object_attributes.target_branch,
           createTime,
           updateTime: createTime,
           status: 'prepare',
+          teamId,
         },
       ]);
+    } else if (body.object_attributes.action === 'close') {
+      await this.missionModel.findOneAndUpdate(
+        { mrId: body.object_attributes.id },
+        {
+          updateTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+          status: 'abnormal',
+          $addToSet: { mrInvolvers: body.user.username },
+        },
+      );
+    } else if (body.object_attributes.action === 'merge') {
+      await this.missionModel.findOneAndUpdate(
+        { mrId: body.object_attributes.id },
+        {
+          updateTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+          status: 'close',
+          $addToSet: { mrInvolvers: body.user.username },
+        },
+      );
+    } else if (body.object_attributes.action === 'update') {
+      await this.missionModel.findOneAndUpdate(
+        { mrId: body.object_attributes.id },
+        {
+          updateTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+        },
+      );
     }
+  }
+
+  async updateMission(body: MissionDto) {
+    await this.missionModel.findOneAndUpdate({ mrId: body.mrId }, body);
   }
 }

@@ -16,7 +16,7 @@ export class Mission {
   targetMemberId: Types.ObjectId;
 
   @Prop()
-  assignee: Types.ObjectId;
+  mrInvolvers: string[];
 
   @Prop()
   giturl: string;
