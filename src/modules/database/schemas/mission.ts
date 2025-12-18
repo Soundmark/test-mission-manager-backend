@@ -44,6 +44,9 @@ export class Mission {
 
   @Prop()
   closeReason: string;
+
+  @Prop({ type: mongoose.Schema.Types.Mixed })
+  assessment: Map<string, any>;
 }
 
 export type MissionDocument = HydratedDocument<Mission>;

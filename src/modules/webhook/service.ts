@@ -1,8 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import axios from 'axios';
-import dayjs from 'dayjs';
 import { Model, Types } from 'mongoose';
+import { getTime } from 'src/utils/time';
 import { Member } from '../database/schemas/member';
 import { Mission } from '../database/schemas/mission';
 import { MergeRequestDto, MissionDto } from './dto';
@@ -24,66 +24,67 @@ export class WebhookService {
   }
 
   async gitlab(body: MergeRequestDto, teamId: string) {
-    const teamMembers = await this.memberModel
-      .find({
-        teamIds: new Types.ObjectId(teamId),
-      })
-      .lean();
-    let projectMembers: typeof teamMembers = [];
-    const teamMemberObj = Object.fromEntries(
-      teamMembers.map((item) => [item.username, item]),
-    );
-    try {
-      projectMembers = (await this.getProjectMembers(body.project.id))
-        .filter((item) =>
-          teamMembers.find(
-            (ele) =>
-              ele.username === item.username &&
-              item.username !== body.user.username,
-          ),
-        )
-        .map((item) => ({
-          ...teamMemberObj[item.username],
-        }));
-    } catch (e) {
-      console.error(e);
-    }
-    const sourceMember = teamMembers.find(
-      (item) => item.username === body.user.username,
-    );
-    if (!sourceMember) {
-      throw new Error('团队中找不到发起成员');
-    }
-    let targetMember: typeof sourceMember;
-    if (
-      projectMembers.length &&
-      projectMembers.find((item) => item.level <= sourceMember.level)
-    ) {
-      // 在projectMembers中按照用户等级和空闲度分配
-      const preAssigneeList = projectMembers.filter(
-        (item) => item.level <= sourceMember.level,
-      );
-      const random = Math.round(Math.random() * preAssigneeList.length);
-      // todo 查看空闲度
-      targetMember = preAssigneeList[random];
-    } else if (
-      teamMembers.length &&
-      teamMembers.find((item) => item.level <= sourceMember.level)
-    ) {
-      // 在teamMembers中按照用户等级和空闲度分配
-      const preAssigneeList = teamMembers.filter(
-        (item) => item.level <= sourceMember.level,
-      );
-      const random = Math.round(Math.random() * preAssigneeList.length);
-      // todo 查看空闲度
-      targetMember = preAssigneeList[random];
-    } else {
-      // 如果找不到合适的任务分配人，将任务指给发起人自己处理
-      targetMember = sourceMember;
-    }
-
-    const createTime = dayjs().format('YYYY-MM-DD HH:mm:ss');
     if (body.object_attributes.action === 'open') {
+      const teamMembers = await this.memberModel
+        .find({
+          teamIds: new Types.ObjectId(teamId),
+        })
+        .lean();
+      let projectMembers: typeof teamMembers = [];
+      const teamMemberObj = Object.fromEntries(
+        teamMembers.map((item) => [item.username, item]),
+      );
+      try {
+        projectMembers = (await this.getProjectMembers(body.project.id))
+          .filter((item) =>
+            teamMembers.find(
+              (ele) =>
+                ele.username === item.username &&
+                item.username !== body.user.username,
+            ),
+          )
+          .map((item) => ({
+            ...teamMemberObj[item.username],
+          }));
+      } catch (e) {
+        console.error(e);
+      }
+      const sourceMember = teamMembers.find(
+        (item) => item.username === body.user.username,
+      );
+      if (!sourceMember) {
+        throw new Error('团队中找不到发起成员');
+      }
+      let targetMember: typeof sourceMember;
+      if (
+        projectMembers.length &&
+        projectMembers.find((item) => item.level <= sourceMember.level)
+      ) {
+        // 在projectMembers中按照用户等级和空闲度分配
+        const preAssigneeList = projectMembers.filter(
+          (item) => item.level <= sourceMember.level,
+        );
+        const random = Math.round(Math.random() * preAssigneeList.length);
+        // todo 查看空闲度
+        targetMember = preAssigneeList[random];
+        console.log(preAssigneeList, random);
+      } else if (
+        teamMembers.length &&
+        teamMembers.find((item) => item.level <= sourceMember.level)
+      ) {
+        // 在teamMembers中按照用户等级和空闲度分配
+        const preAssigneeList = teamMembers.filter(
+          (item) => item.level <= sourceMember.level,
+        );
+        const random = Math.round(Math.random() * preAssigneeList.length);
+        // todo 查看空闲度
+        targetMember = preAssigneeList[random];
+      } else {
+        // 如果找不到合适的任务分配人，将任务指给发起人自己处理
+        targetMember = sourceMember;
+      }
+
+      const createTime = getTime();
       await this.missionModel.create([
         {
           mrId: body.object_attributes.id,
@@ -104,31 +105,36 @@ export class WebhookService {
       await this.missionModel.findOneAndUpdate(
         { mrId: body.object_attributes.id },
         {
-          updateTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+          updateTime: getTime(),
           status: 'abnormal',
           $addToSet: { mrInvolvers: body.user.username },
         },
       );
     } else if (body.object_attributes.action === 'merge') {
-      await this.missionModel.findOneAndUpdate(
-        { mrId: body.object_attributes.id },
-        {
-          updateTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
-          status: 'close',
-          $addToSet: { mrInvolvers: body.user.username },
+      const mission = await this.missionModel.findOne({
+        mrId: body.object_attributes.id,
+      });
+      await mission?.updateOne({
+        $set: {
+          updateTime: getTime(),
+          status: mission.assessment ? 'finish' : 'prefinish',
         },
-      );
+        $addToSet: { mrInvolvers: body.user.username },
+      });
     } else if (body.object_attributes.action === 'update') {
       await this.missionModel.findOneAndUpdate(
         { mrId: body.object_attributes.id },
         {
-          updateTime: dayjs().format('YYYY-MM-DD HH:mm:ss'),
+          updateTime: getTime(),
         },
       );
     }
   }
 
   async updateMission(body: MissionDto) {
-    await this.missionModel.findOneAndUpdate({ mrId: body.mrId }, body);
+    await this.missionModel.findOneAndUpdate(
+      { mrId: body.mrId },
+      { ...body, updateTime: getTime() },
+    );
   }
 }
