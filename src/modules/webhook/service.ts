@@ -5,12 +5,14 @@ import { Model, Types } from 'mongoose';
 import { getTime } from 'src/utils/time';
 import { Member } from '../database/schemas/member';
 import { Mission } from '../database/schemas/mission';
+import { NotificationService } from '../notification/service';
 import { MergeRequestDto, MissionDto } from './dto';
 import { ProjectMember } from './type';
 
 @Injectable()
 export class WebhookService {
   constructor(
+    private notificationService: NotificationService,
     @InjectModel(Member.name) private memberModel: Model<Member>,
     @InjectModel(Mission.name) private missionModel: Model<Mission>,
   ) {}
@@ -101,40 +103,99 @@ export class WebhookService {
           teamId,
         },
       ]);
-    } else if (body.object_attributes.action === 'close') {
-      await this.missionModel.findOneAndUpdate(
-        { mrId: body.object_attributes.id },
+      this.notificationService.sendMessage(
+        [sourceMember._id.toString(), targetMember._id.toString()],
         {
+          type: 'mission',
+          msg: `新任务${body.object_attributes.id}`,
+        },
+      );
+    } else if (body.object_attributes.action === 'close') {
+      const mission = await this.missionModel.findOne({
+        mrId: body.object_attributes.id,
+      });
+      if (mission) {
+        await mission.updateOne({
           updateTime: getTime(),
           status: 'abnormal',
           $addToSet: { mrInvolvers: body.user.username },
-        },
-      );
+        });
+        this.notificationService.sendMessage(
+          [
+            mission.sourceMemberId.toString(),
+            mission.targetMemberId.toString(),
+          ],
+          {
+            type: 'mission',
+            msg: `任务${mission.mrId}异常关闭`,
+          },
+        );
+      } else {
+        throw new Error('找不到任务');
+      }
     } else if (body.object_attributes.action === 'merge') {
       const mission = await this.missionModel.findOne({
         mrId: body.object_attributes.id,
       });
-      await mission?.updateOne({
-        $set: {
-          updateTime: getTime(),
-          status: mission.assessment ? 'finish' : 'prefinish',
-        },
-        $addToSet: { mrInvolvers: body.user.username },
-      });
+      if (mission) {
+        await mission.updateOne({
+          $set: {
+            updateTime: getTime(),
+            status: mission.assessment ? 'finish' : 'prefinish',
+          },
+          $addToSet: { mrInvolvers: body.user.username },
+        });
+        this.notificationService.sendMessage(
+          [
+            mission.sourceMemberId.toString(),
+            mission.targetMemberId.toString(),
+          ],
+          {
+            type: 'mission',
+            msg: `任务${mission.mrId}${mission.assessment ? '完成' : '待评价'}`,
+          },
+        );
+      } else {
+        throw new Error('找不到任务');
+      }
     } else if (body.object_attributes.action === 'update') {
-      await this.missionModel.findOneAndUpdate(
-        { mrId: body.object_attributes.id },
-        {
+      const mission = await this.missionModel.findOne({
+        mrId: body.object_attributes.id,
+      });
+      if (mission) {
+        await mission.updateOne({
           updateTime: getTime(),
-        },
-      );
+          $addToSet: { mrInvolvers: body.user.username },
+        });
+        this.notificationService.sendMessage(
+          [
+            mission.sourceMemberId.toString(),
+            mission.targetMemberId.toString(),
+          ],
+          {
+            type: 'mission',
+            msg: `任务${mission.mrId}更新`,
+          },
+        );
+      } else {
+        throw new Error('找不到任务');
+      }
     }
   }
 
   async updateMission(body: MissionDto) {
-    await this.missionModel.findOneAndUpdate(
-      { mrId: body.mrId },
-      { ...body, updateTime: getTime() },
-    );
+    const mission = await this.missionModel.findOne({ mrId: body.mrId });
+    if (mission) {
+      await mission.updateOne({ ...body, updateTime: getTime() });
+      this.notificationService.sendMessage(
+        [mission.sourceMemberId.toString(), mission.targetMemberId.toString()],
+        {
+          type: 'mission',
+          msg: `任务${mission.mrId}更新`,
+        },
+      );
+    } else {
+      throw new Error('找不到任务');
+    }
   }
 }

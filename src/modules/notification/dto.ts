@@ -5,5 +5,8 @@ export class Message {
   type: string;
 
   @ApiProperty()
-  data: Record<string, any>;
+  msg: string;
+
+  @ApiProperty()
+  data?: Record<string, any>;
 }

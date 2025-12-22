@@ -17,7 +17,11 @@ export class WebhookController {
 
   @Get('/triggerNotification')
   triggerNotification(@Query('memberId') memberId: string) {
-    this.notificationService.sendMessage(memberId, { type: 'test', data: {} });
+    this.notificationService.sendMessage([memberId], {
+      type: 'test',
+      msg: '',
+      data: {},
+    });
   }
 
   @Post('gitlab/:teamId')
