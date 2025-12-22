@@ -26,7 +26,6 @@ export class WebhookService {
   }
 
   async gitlab(body: MergeRequestDto, teamId: string) {
-    console.log(body);
     if (body.object_attributes.action === 'open') {
       const teamMembers = await this.memberModel
         .find({
@@ -67,10 +66,9 @@ export class WebhookService {
         const preAssigneeList = projectMembers.filter(
           (item) => item.level <= sourceMember.level,
         );
-        const random = Math.round(Math.random() * preAssigneeList.length);
+        const random = Math.floor(Math.random() * preAssigneeList.length);
         // todo 查看空闲度
         targetMember = preAssigneeList[random];
-        console.log(preAssigneeList, random);
       } else if (
         teamMembers.length &&
         teamMembers.find((item) => item.level <= sourceMember.level)
@@ -79,14 +77,13 @@ export class WebhookService {
         const preAssigneeList = teamMembers.filter(
           (item) => item.level <= sourceMember.level,
         );
-        const random = Math.round(Math.random() * preAssigneeList.length);
+        const random = Math.floor(Math.random() * preAssigneeList.length);
         // todo 查看空闲度
         targetMember = preAssigneeList[random];
       } else {
         // 如果找不到合适的任务分配人，将任务指给发起人自己处理
         targetMember = sourceMember;
       }
-      console.log(sourceMember, targetMember);
 
       const createTime = getTime();
       await this.missionModel.create([
