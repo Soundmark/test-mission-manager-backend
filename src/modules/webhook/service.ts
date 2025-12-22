@@ -26,6 +26,7 @@ export class WebhookService {
   }
 
   async gitlab(body: MergeRequestDto, teamId: string) {
+    console.log(body);
     if (body.object_attributes.action === 'open') {
       const teamMembers = await this.memberModel
         .find({
@@ -85,6 +86,7 @@ export class WebhookService {
         // 如果找不到合适的任务分配人，将任务指给发起人自己处理
         targetMember = sourceMember;
       }
+      console.log(sourceMember, targetMember);
 
       const createTime = getTime();
       await this.missionModel.create([
