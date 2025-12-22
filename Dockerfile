@@ -3,5 +3,4 @@ WORKDIR /app
 # 拷贝 pnpm deploy 出来的纯净目录
 COPY ./isolated/node_modules ./node_modules
 COPY ./dist ./dist
-RUN ls -al /app/dist/
 CMD ["node", "dist/main.js"]
